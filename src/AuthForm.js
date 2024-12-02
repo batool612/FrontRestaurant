@@ -37,7 +37,15 @@ const AuthForm = () => {
         // If login is successful and a token is returned, save the token
         localStorage.setItem('token', response.data.token);
         alert(`${isSignUp ? 'Sign-up' : 'Login'} Successful`);
-        navigate('/'); // Redirect to home or dashboard
+
+        // Redirect based on action
+        if (isSignUp) {
+          // Redirect to login after successful sign up
+          navigate('/login');
+        } else {
+          // Redirect to home after successful login
+          navigate('/');
+        }
       } else {
         alert(response.data.message);
       }
