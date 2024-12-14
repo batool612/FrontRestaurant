@@ -70,6 +70,7 @@ const AuthForm = () => {
         <input
           type="email"
           name="email"
+          id="email"
           placeholder="Email"
           value={formData.email}
           onChange={handleChange}
@@ -78,6 +79,7 @@ const AuthForm = () => {
         <input
           type="password"
           name="password"
+          id="password"  
           placeholder="Password"
           value={formData.password}
           onChange={handleChange}
@@ -94,3 +96,4 @@ const AuthForm = () => {
 };
 
 export default AuthForm;
+
