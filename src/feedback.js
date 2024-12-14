@@ -1,39 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { fetchUserReservations, submitFeedback } from './api'; // Import centralized API functions
 import './feedback.css';
 
 const Feedback = () => {
   const [reservationId, setReservationId] = useState('');
   const [details, setDetails] = useState('');
   const [rating, setRating] = useState('');
-  const [reservations, setReservations] = useState([]);
+  const [reservations, setReservations] = useState([]); // Initialize as an empty array
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
 
   useEffect(() => {
-    // Fetch user reservations to get reservation IDs
-    axios
-      .get('http://localhost:4000/api/v1/view', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      })
-      .then((res) => setReservations(res.data.reservations))
-      .catch((err) => setError('Failed to fetch reservations.'));
+    const fetchReservations = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetchUserReservations(token); // Removed unnecessary `null` argument
+        setReservations(res?.data?.reservations || []); // Ensure reservations is always an array
+        setError(null);
+      } catch (err) {
+        setError('Failed to fetch reservations.');
+        setReservations([]); // Set to an empty array to avoid undefined issues
+      }
+    };
+
+    fetchReservations();
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Submit feedback
-      const response = await axios.post(
-        'http://localhost:4000/api/v1/feedback',
-        {
-          reservation_id: reservationId,
-          details,
-          rating,
-        },
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-        }
+      const token = localStorage.getItem('token');
+      const response = await submitFeedback(
+        { reservation_id: reservationId, details, rating },
+        token
       );
       setSuccessMessage(response.data.message);
       setError(null);
@@ -61,11 +60,15 @@ const Feedback = () => {
           required
         >
           <option value="">-- Select a Reservation --</option>
-          {reservations.map((res) => (
-            <option key={res._id} value={res._id}>
-              {res.date} at {res.time} ({res.guestCount} guests)
-            </option>
-          ))}
+          {reservations.length > 0 ? (
+            reservations.map((res) => (
+              <option key={res._id} value={res._id}>
+                {res.date} at {res.time} ({res.guestCount} guests)
+              </option>
+            ))
+          ) : (
+            <option disabled>No reservations available</option>
+          )}
         </select>
 
         <label htmlFor="details">Feedback Details:</label>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { viewFeedback } from './api'; // Import the centralized API function
 import './viewfeedback.css';
 
 const ViewFeedback = () => {
@@ -7,12 +7,17 @@ const ViewFeedback = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Fetch feedback data (only for admin)
-    axios.get('http://localhost:4000/api/v1/view', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-    })
-    .then((res) => setFeedbacks(res.data.feedbacks))
-    .catch((err) => setError('Failed to fetch feedback.'));
+    const fetchFeedbacks = async () => {
+      try {
+        const token = localStorage.getItem('token'); // Retrieve token from localStorage
+        const response = await viewFeedback(token); // Fetch feedback using API function
+        setFeedbacks(response.data.feedbacks); // Set feedbacks in state
+      } catch (err) {
+        setError('Failed to fetch feedback.');
+      }
+    };
+
+    fetchFeedbacks();
   }, []);
 
   return (
@@ -29,7 +34,7 @@ const ViewFeedback = () => {
               <th>Reservation ID</th>
               <th>Details</th>
               <th>Rating</th>
-              <th>Date</th>
+              <th>Created At</th>
             </tr>
           </thead>
           <tbody>
@@ -38,7 +43,7 @@ const ViewFeedback = () => {
                 <td>{feedback.reservation_id}</td>
                 <td>{feedback.details}</td>
                 <td>{feedback.rating}</td>
-                <td>{new Date(feedback.date).toLocaleDateString()}</td>
+                <td>{new Date(feedback.createdAt).toLocaleDateString()}</td>
               </tr>
             ))}
           </tbody>
