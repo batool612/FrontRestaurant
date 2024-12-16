@@ -6,7 +6,7 @@ const Reservations = () => {
   const [reservations, setReservations] = useState([]);
   const [availableTables, setAvailableTables] = useState([]); // State for available tables
   const [newReservation, setNewReservation] = useState({
-    table_number: '',
+    table_number: '', // No change here
     time: '',
   });
   const [error, setError] = useState(null);
@@ -19,7 +19,7 @@ const Reservations = () => {
         const reservationsResponse = await fetchUserReservations(token);
         setReservations(reservationsResponse.data.reservations);
 
-        // Fetch available tables
+        // Fetch available tables with capacity
         const tablesResponse = await fetchAvailableTables(token);
         setAvailableTables(tablesResponse.data.tables);
 
@@ -33,10 +33,17 @@ const Reservations = () => {
     fetchData();
   }, [token]);
 
+  // Updated reservation handler with added validation for the table_number type
   const handleReservation = async (e) => {
     e.preventDefault();
     try {
-      const response = await createReservation(newReservation, token); // Create a new reservation
+      const reservationData = {
+        user_id: localStorage.getItem('userId'), // Assuming the user ID is stored in localStorage
+        table_number: Number(newReservation.table_number), // Ensure the table number is a number
+        time: newReservation.time,
+      };
+
+      const response = await createReservation(reservationData, token); // Create a new reservation
       alert('Reservation made successfully!');
       setReservations([...reservations, response.data.reservation]); // Add the new reservation to the state
       setNewReservation({ table_number: '', time: '' }); // Reset the form
@@ -54,7 +61,7 @@ const Reservations = () => {
 
       {/* Reservation Form */}
       <form onSubmit={handleReservation}>
-        {/* Table Selector */}
+        {/* Table Selector with Capacity */}
         <select
           name="table_number"
           value={newReservation.table_number}
@@ -66,7 +73,7 @@ const Reservations = () => {
           <option value="">Select Table</option>
           {availableTables.map((table) => (
             <option key={table._id} value={table.table_number}>
-              Table {table.table_number}
+              Table {table.table_number} - Capacity: {table.capacity} guests
             </option>
           ))}
         </select>
@@ -88,7 +95,7 @@ const Reservations = () => {
       <ul>
         {reservations.map((res, index) => (
           <li key={index}>
-            Table {res.table_number} at {new Date(res.time).toLocaleString()} for {res.guestCount || 0} guests
+            Table {res.table_number} at {new Date(res.time).toLocaleString()} 
           </li>
         ))}
       </ul>
