@@ -14,8 +14,12 @@ const Feedback = () => {
     const fetchReservations = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetchUserReservations(token); // Removed unnecessary `null` argument
-        setReservations(res?.data?.reservations || []); // Ensure reservations is always an array
+        const res = await fetchUserReservations(token);
+        // Filter reservations: exclude canceled or feedback-submitted reservations
+        const eligibleReservations = res?.data?.reservations.filter(
+          (reservation) => reservation.status !== 'canceled' && !reservation.feedbackSubmitted
+        );
+        setReservations(eligibleReservations || []); // Ensure reservations is always an array
         setError(null);
       } catch (err) {
         setError('Failed to fetch reservations.');
@@ -39,6 +43,12 @@ const Feedback = () => {
       setReservationId('');
       setDetails('');
       setRating('');
+      // Update the local reservations state to reflect feedback submission
+      setReservations((prev) =>
+        prev.map((res) =>
+          res._id === reservationId ? { ...res, feedbackSubmitted: true } : res
+        ).filter((res) => !res.feedbackSubmitted)
+      );
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to submit feedback.');
       setSuccessMessage(null);

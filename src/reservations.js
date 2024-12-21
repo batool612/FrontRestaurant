@@ -6,7 +6,7 @@ const Reservations = () => {
   const [reservations, setReservations] = useState([]);
   const [availableTables, setAvailableTables] = useState([]); // State for available tables
   const [newReservation, setNewReservation] = useState({
-    table_number: '', // No change here
+    table_number: '',
     time: '',
   });
   const [error, setError] = useState(null);
@@ -33,7 +33,6 @@ const Reservations = () => {
     fetchData();
   }, [token]);
 
-  // Updated reservation handler with added validation for the table_number type
   const handleReservation = async (e) => {
     e.preventDefault();
     try {
@@ -95,7 +94,8 @@ const Reservations = () => {
       <ul>
         {reservations.map((res, index) => (
           <li key={index}>
-            Table {res.table_number} at {new Date(res.time).toLocaleString()} 
+            Table {res.table_number} at {new Date(res.time).toLocaleString()} - 
+            <strong> Status:</strong> {res.status}
           </li>
         ))}
       </ul>

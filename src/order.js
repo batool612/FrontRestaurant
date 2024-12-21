@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { placeOrder, fetchMenuItems, fetchUserReservations } from './api'; // Import API functions
+import { placeOrder, fetchMenuItems, fetchUserReservations } from './api';
 import './order.css';
 
 const Order = () => {
@@ -8,32 +8,38 @@ const Order = () => {
   const [orderItems, setOrderItems] = useState([]);
   const [reservationId, setReservationId] = useState('');
   const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(true); // State to track loading status
-  const token = localStorage.getItem('token'); // Fetch token from localStorage
+  const [loading, setLoading] = useState(true);
+  const token = localStorage.getItem('token');
+
+  // Calculate the total price based on order items
+  const totalPrice = orderItems.reduce((total, orderItem) => {
+    const menuItem = menuItems.find((item) => item.name === orderItem.name);
+    return total + (menuItem ? menuItem.price * orderItem.quantity : 0);
+  }, 0);
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true); // Start loading
+      setLoading(true);
       try {
-        const menuResponse = await fetchMenuItems(token); // Fetch menu items
-        const reservationResponse = await fetchUserReservations(token); // Fetch user reservations
-  
-        console.log("Menu items:", menuResponse.data.menuItems);
-        console.log("Reservations:", reservationResponse.data.reservations);
-  
-        setMenuItems(menuResponse.data.menuItems); // Set menu items in state
-        setReservations(reservationResponse.data.reservations); // Set reservations in state
+        const menuResponse = await fetchMenuItems(token);
+        const reservationResponse = await fetchUserReservations(token);
+
+        setMenuItems(menuResponse.data.menuItems);
+        setReservations(
+          reservationResponse.data.reservations.filter(
+            (reservation) => reservation.status !== 'canceled' && reservation.status !== 'completed'
+          )
+        );
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
-        setLoading(false); // End loading
+        setLoading(false);
       }
     };
-  
+
     fetchData();
   }, [token]);
 
-  // Function to handle adding items to the order
   const handleAddItem = (itemName) => {
     setOrderItems((prev) => {
       const existingItem = prev.find((item) => item.name === itemName);
@@ -44,34 +50,31 @@ const Order = () => {
             : item
         );
       } else {
-        const item = menuItems.find((menuItem) => menuItem.name === itemName);
         return [...prev, { name: itemName, quantity: 1 }];
       }
     });
   };
 
-  // Function to handle removing items from the order
   const handleRemoveItem = (itemName) => {
     setOrderItems((prev) => prev.filter((item) => item.name !== itemName));
   };
 
-  // Function to handle placing the order
   const handlePlaceOrder = async () => {
     if (!reservationId) {
       setMessage('Please select a reservation before placing the order.');
-      return; // Exit the function if no reservation is selected
+      return;
     }
 
     try {
       const orderData = {
         reservation_id: reservationId,
-        items: orderItems.map(({ name, quantity }) => ({ name, quantity })), // Use item names
+        items: orderItems.map(({ name, quantity }) => ({ name, quantity })),
       };
-      const response = await placeOrder(orderData, token); // Place the order
-      setMessage(response.data.message); // Show success message
-      setOrderItems([]); // Reset order items
+      const response = await placeOrder(orderData, token);
+      setMessage(response.data.message);
+      setOrderItems([]);
     } catch (error) {
-      setMessage('Failed to place order.'); // Show error message
+      setMessage('Failed to place order.');
       console.error(error);
     }
   };
@@ -83,10 +86,9 @@ const Order = () => {
       {message && <p>{message}</p>}
 
       {loading ? (
-        <p>Loading...</p> // Show loading message while fetching data
+        <p>Loading...</p>
       ) : (
         <>
-          {/* Reservation Selector */}
           <div>
             <h3>Select Reservation</h3>
             <select onChange={(e) => setReservationId(e.target.value)} value={reservationId}>
@@ -103,7 +105,6 @@ const Order = () => {
             </select>
           </div>
 
-          {/* Menu Items */}
           <div>
             <h3>Menu Items</h3>
             <ul>
@@ -121,7 +122,6 @@ const Order = () => {
             </ul>
           </div>
 
-          {/* Current Order */}
           <div>
             <h3>Your Order</h3>
             <ul>
@@ -137,9 +137,12 @@ const Order = () => {
               )}
             </ul>
             {orderItems.length > 0 && (
-              <button onClick={handlePlaceOrder} disabled={!reservationId}>
-                Place Order
-              </button>
+              <>
+                <p><strong>Total Price:</strong> ${totalPrice.toFixed(2)}</p>
+                <button onClick={handlePlaceOrder} disabled={!reservationId}>
+                  Place Order
+                </button>
+              </>
             )}
           </div>
         </>
